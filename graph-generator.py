@@ -6,7 +6,7 @@ from io import BytesIO
 
 s3_client = boto3.client('s3')
 corpus_filename = "data/corpus.json"
-pagerank_filename = "data/pagerank.txt"
+pagerank_filename = "page-rank/pagerank.txt"
 
 corpus_object = s3_client.get_object(
     Bucket='search-engine-bd', Key=corpus_filename)
