@@ -3,7 +3,7 @@ import json
 from os import listdir
 import random
 
-corpus_filename = "data/corpus.json"
+corpus_filename = "s3://search-engine-bd/data/corpus.json"
 
 with open(corpus_filename, "r") as corpus_json:
     corpus = json.load(corpus_json)
@@ -24,7 +24,7 @@ def generate_graph(paper, pids):
 
 generate_graph(corpus, [])
 
-with open('data/pagerank.txt', 'w') as f:
+with open('s3://search-engine-bd/data/pagerank.txt', 'w') as f:
     f.writelines(lines)
 
 f.close()

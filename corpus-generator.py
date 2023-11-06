@@ -44,7 +44,7 @@ class Paper:
                 json={
                     "ids": tmp_pids}
             )
-            if(response.status_code == 200):
+            if (response.status_code == 200):
                 results = r.json()
                 for ref in results:
                     if ref and ref["isOpenAccess"] is True:
@@ -96,7 +96,7 @@ def tree_to_json(paper):
     tree_dict = paper.to_dict()
     traverse_tree_util(paper, tree_dict)
 
-    with open('data/corpus.json', 'w') as json_file:
+    with open('s3://hive-practice/data/corpus.json', 'w') as json_file:
         json.dump(tree_dict, json_file, indent=4)
 
 
@@ -107,14 +107,14 @@ def download_papers():
 
     for paper in papers:
         content = ""
-        with open(f"corpus/pdf/{paper}.pdf".format(paper), 'rb') as pdf_file:
+        with open(f"s3://hive-practice/corpus/pdf/{paper}.pdf".format(paper), 'rb') as pdf_file:
             pdf_reader = PyPDF2.PdfReader(pdf_file)
             n_pages = len(pdf_reader.pages)
             for page in pdf_reader.pages:
                 page_text = page.extract_text()
                 content += page_text
 
-            with open(f'corpus/txt/{paper}.txt'.format(paper), 'w') as txt_file:
+            with open(f's3://hive-practice/corpus/txt/{paper}.txt'.format(paper), 'w') as txt_file:
                 txt_file.write(content)
 
 

@@ -82,7 +82,7 @@ def download_papers_util(paper_ids: list[str], directory: str = 'papers', user_a
 #             print(f"Downloaded '{paper_id}' to '{result}'")
 
 def download_papers_pdf(paper_ids):
-    for paper_id, result in download_papers_util(paper_ids, directory="corpus/pdf", user_agent="requests/2.0.0"):
+    for paper_id, result in download_papers_util(paper_ids, directory="s3://search-engine-bd/corpus/pdf", user_agent="requests/2.0.0"):
         if isinstance(result, Exception):
             print(f"Failed to download '{paper_id}': {type(result).__name__}: {result}")
         elif result is None:
