@@ -31,37 +31,36 @@ class Paper:
         self.referenced_papers.append(paper)
 
     def get_references(self):
-        url = f"https://api.semanticscholar.org/graph/v1/paper/{self.pid}/references".format(
-            self.pid)
+        url = f"https://api.semanticscholar.org/graph/v1/paper/{self.pid}/references"
         response = requests.get(url)
         if response.status_code == 200:
             results = response.json()
-            tmp_references = results["data"]
+            tmp_references = results.get("data",[])
 
-            tmp_pids = []
-            for ref in tmp_references:
-                tmp_pids.append(ref["citedPaper"]["paperId"])
+            tmp_pids = [ref["citedPaper"]["paperId"] for ref in tmp_references if "citedPaper" in ref]
 
-            r = requests.post(
-                'https://api.semanticscholar.org/graph/v1/paper/batch',
-                params={'fields': 'isOpenAccess'},
-                json={
-                    "ids": tmp_pids}
-            )
-            if (response.status_code == 200):
-                results = r.json()
-                for ref in results:
-                    if ref and ref["isOpenAccess"] is True:
-                        self.references.append(ref["paperId"])
+            if tmp_pids:
 
-            else:
-                self.error = True
-                return
+                r = requests.post(
+                    'https://api.semanticscholar.org/graph/v1/paper/batch',
+                    params={'fields': 'isOpenAccess'},
+                    json={
+                        "ids": tmp_pids}
+                )
+                if (r.status_code == 200):
+                    results = r.json()
+                    for ref in results:
+                        if isinstance(ref, dict) and ref.get("isOpenAccess") is True:
+                            self.references.append(ref["paperId"])
+
+                else:
+                    self.error = True
+                    return
 
             n_references = len(self.references)
             n_papers = max_references if n_references > max_references else n_references
 
-            self.references = self.references[0:n_papers]
+            self.references = self.references[:n_papers]
 
             print(self.references)
 
@@ -101,7 +100,7 @@ def tree_to_json(paper):
     traverse_tree_util(paper, tree_dict)
 
     # with open('s3://search-engine-bd/data/corpus.json', 'w') as json_file:
-    json_data_bytes =  json.dump(tree_dict, indent=4).encode('utf-8')
+    json_data_bytes =  json.dumps(tree_dict, indent=4).encode('utf-8')
    
     s3_client = boto3.client('s3')
 
@@ -122,7 +121,7 @@ def download_papers():
     for paper in papers:
         content = ""
         
-        pdf_object = s3_client.get_object('search-engine-bd',f"corpus/pdf/{paper}.pdf".format(paper))
+        pdf_object = s3_client.get_object(Bucket='search-engine-bd',Key=f"corpus/pdf/{paper}.pdf")
         pdf_data = BytesIO(pdf_object['Body'].read())
 
         pdf_reader = PyPDF2.PdfReader(pdf_data)
