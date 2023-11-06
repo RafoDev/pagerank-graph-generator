@@ -1,7 +1,12 @@
 import argparse
 import os
+
+import boto3
+from botocore.exceptions import NoCredentialsError
+from io import BytesIO
+
 from requests import Session
-from typing import Generator, Union
+from typing import Generator, Union, List, Tuple
 
 import urllib3
 urllib3.disable_warnings()
@@ -20,6 +25,8 @@ def get_paper(session: Session, paper_id: str, fields: str = 'paperId,title', **
 
 def download_pdf(session: Session, url: str, path: str, user_agent: str = 'requests/2.0.0'):
     # send a user-agent to avoid server error
+    s3_client = boto3.client('s3')
+    
     headers = {
         'user-agent': user_agent,
     }
@@ -31,11 +38,22 @@ def download_pdf(session: Session, url: str, path: str, user_agent: str = 'reque
 
         if response.headers['content-type'] != 'application/pdf':
             raise Exception('The response is not a pdf')
+        
+        pdf_data = BytesIO()
 
-        with open(path, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            pdf_data.write(chunk)
+        
+        pdf_data.seek(0)
+
+        s3_client.upload_fileobj(pdf_data, 'search-engine-bd', path)
+
+        pdf_data.close()
+
+        # with open(path, 'wb') as f:
             # write the response to the file, chunk_size bytes at a time
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+            # for chunk in response.iter_content(chunk_size=8192):
+            #     f.write(chunk)
 
 
 def download_paper(session: Session, paper_id: str, directory: str = 'papers', user_agent: str = 'requests/2.0.0') -> Union[str, None]:
@@ -56,13 +74,14 @@ def download_paper(session: Session, paper_id: str, directory: str = 'papers', u
     os.makedirs(directory, exist_ok=True)
 
     # check if the pdf has already been downloaded
-    if not os.path.exists(pdf_path):
-        download_pdf(session, pdf_url, pdf_path, user_agent=user_agent)
+
+    # if not os.path.exists(pdf_path):
+    download_pdf(session, pdf_url, pdf_path, user_agent=user_agent)
 
     return pdf_path
 
 
-def download_papers_util(paper_ids: list[str], directory: str = 'papers', user_agent: str = 'requests/2.0.0') -> Generator[tuple[str, Union[str, None, Exception]], None, None]:
+def download_papers_util(paper_ids: List[str], directory: str = 'papers', user_agent: str = 'requests/2.0.0') -> Generator[Tuple[str, Union[str, None, Exception]], None, None]:
     # use a session to reuse the same TCP connection
     with Session() as session:
         for paper_id in paper_ids:
@@ -82,7 +101,7 @@ def download_papers_util(paper_ids: list[str], directory: str = 'papers', user_a
 #             print(f"Downloaded '{paper_id}' to '{result}'")
 
 def download_papers_pdf(paper_ids):
-    for paper_id, result in download_papers_util(paper_ids, directory="s3://search-engine-bd/corpus/pdf", user_agent="requests/2.0.0"):
+    for paper_id, result in download_papers_util(paper_ids, directory="corpus/pdf", user_agent="requests/2.0.0"):
         if isinstance(result, Exception):
             print(f"Failed to download '{paper_id}': {type(result).__name__}: {result}")
         elif result is None:

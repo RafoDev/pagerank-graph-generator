@@ -1,3 +1,4 @@
 requests
 argparse
 PyPDF2
+boto3

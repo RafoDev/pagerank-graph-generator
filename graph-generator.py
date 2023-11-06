@@ -1,12 +1,19 @@
 import json
-
-from os import listdir
 import random
+import boto3
+from botocore.exceptions import NoCredentialsError
+from io import BytesIO
 
-corpus_filename = "s3://search-engine-bd/data/corpus.json"
+s3_client = boto3.client('s3')
+corpus_filename = "data/corpus.json"
+pagerank_filename =  "data/pagerank.txt"
 
-with open(corpus_filename, "r") as corpus_json:
-    corpus = json.load(corpus_json)
+corpus_object = s3_client.get_object('search-engine-bd', corpus_filename)
+corpus_data = corpus_object['Body'].read().decode('utf-8')
+corpus = json.loads(corpus_data)
+
+# with open(corpus_filename, "r") as corpus_json:
+#     corpus = json.load(corpus_json)
 
 lines = ""
 
@@ -24,7 +31,15 @@ def generate_graph(paper, pids):
 
 generate_graph(corpus, [])
 
-with open('s3://search-engine-bd/data/pagerank.txt', 'w') as f:
-    f.writelines(lines)
+lines_bytes = lines.encode('utf-8')
 
-f.close()
+lines_buffer = BytesIO(lines_bytes)
+
+s3_client.upload_fileobj(lines_buffer, 'search-engine-bd', pagerank_filename)
+
+lines_buffer.close()
+
+# with open('s3://search-engine-bd/data/pagerank.txt', 'w') as f:
+#     f.writelines(lines)
+
+# f.close()

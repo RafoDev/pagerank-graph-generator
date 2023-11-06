@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#pip install -r requirements.txt
 # dirs creation for corpus and related data
 mkdir corpus
 mkdir corpus/pdf

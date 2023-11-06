@@ -2,6 +2,10 @@ import requests
 import json
 import PyPDF2
 from downloader import download_papers_pdf
+import boto3
+from botocore.exceptions import NoCredentialsError
+from io import BytesIO
+
 # from pdfminer.high_level import extract_text
 max_depth = 1
 max_references = 3
@@ -96,26 +100,52 @@ def tree_to_json(paper):
     tree_dict = paper.to_dict()
     traverse_tree_util(paper, tree_dict)
 
-    with open('s3://hive-practice/data/corpus.json', 'w') as json_file:
-        json.dump(tree_dict, json_file, indent=4)
+    # with open('s3://search-engine-bd/data/corpus.json', 'w') as json_file:
+    json_data_bytes =  json.dump(tree_dict, indent=4).encode('utf-8')
+   
+    s3_client = boto3.client('s3')
+
+    json_buffer = BytesIO(json_data_bytes)
+
+    s3_client.upload_fileobj(json_buffer,'search-engine-bd', 'data/corpus.json')
+
+    json_buffer.close()
+
 
 
 def download_papers():
     global papers
+    s3_client = boto3.client('s3')
 
     download_papers_pdf(papers)
 
     for paper in papers:
         content = ""
-        with open(f"s3://hive-practice/corpus/pdf/{paper}.pdf".format(paper), 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            n_pages = len(pdf_reader.pages)
-            for page in pdf_reader.pages:
-                page_text = page.extract_text()
-                content += page_text
+        
+        pdf_object = s3_client.get_object('search-engine-bd',f"corpus/pdf/{paper}.pdf".format(paper))
+        pdf_data = BytesIO(pdf_object['Body'].read())
 
-            with open(f's3://hive-practice/corpus/txt/{paper}.txt'.format(paper), 'w') as txt_file:
-                txt_file.write(content)
+        pdf_reader = PyPDF2.PdfReader(pdf_data)
+        
+        for page in pdf_reader.pages:
+            page_text = page.extract_text()
+            content += page_text
+
+        text_data = BytesIO(content.encode('utf-8'))
+        s3_client.upload_fileobj(text_data, 'search-engine-bd', f'corpus/txt/{paper}.txt'.format(paper))
+
+        pdf_data.close()
+        text_data.close()
+
+        # with open(f"s3://search-engine-bd/corpus/pdf/{paper}.pdf".format(paper), 'rb') as pdf_file:
+        #     pdf_reader = PyPDF2.PdfReader(pdf_file)
+        #     n_pages = len(pdf_reader.pages)
+        #     for page in pdf_reader.pages:
+        #         page_text = page.extract_text()
+        #         content += page_text
+
+        #     with open(f's3://search-engine-bd/corpus/txt/{paper}.txt'.format(paper), 'w') as txt_file:
+        #         txt_file.write(content)
 
 
 if __name__ == "__main__":
