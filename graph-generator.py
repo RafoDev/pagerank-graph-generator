@@ -6,9 +6,10 @@ from io import BytesIO
 
 s3_client = boto3.client('s3')
 corpus_filename = "data/corpus.json"
-pagerank_filename =  "data/pagerank.txt"
+pagerank_filename = "data/pagerank.txt"
 
-corpus_object = s3_client.get_object('search-engine-bd', corpus_filename)
+corpus_object = s3_client.get_object(
+    Bucket='search-engine-bd', Key=corpus_filename)
 corpus_data = corpus_object['Body'].read().decode('utf-8')
 corpus = json.loads(corpus_data)
 
@@ -16,6 +17,7 @@ corpus = json.loads(corpus_data)
 #     corpus = json.load(corpus_json)
 
 lines = ""
+
 
 def generate_graph(paper, pids):
     global lines
