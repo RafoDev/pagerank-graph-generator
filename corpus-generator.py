@@ -6,7 +6,6 @@ import boto3
 from botocore.exceptions import NoCredentialsError
 from io import BytesIO
 
-# from pdfminer.high_level import extract_text
 max_depth = 1
 max_references = 3
 
@@ -62,8 +61,6 @@ class Paper:
 
             self.references = self.references[:n_papers]
 
-            print(self.references)
-
         else:
             self.error = True
 
@@ -99,7 +96,6 @@ def tree_to_json(paper):
     tree_dict = paper.to_dict()
     traverse_tree_util(paper, tree_dict)
 
-    # with open('s3://search-engine-bd/data/corpus.json', 'w') as json_file:
     json_data_bytes =  json.dumps(tree_dict, indent=4).encode('utf-8')
    
     s3_client = boto3.client('s3')
@@ -135,17 +131,6 @@ def download_papers():
 
         pdf_data.close()
         text_data.close()
-
-        # with open(f"s3://search-engine-bd/corpus/pdf/{paper}.pdf".format(paper), 'rb') as pdf_file:
-        #     pdf_reader = PyPDF2.PdfReader(pdf_file)
-        #     n_pages = len(pdf_reader.pages)
-        #     for page in pdf_reader.pages:
-        #         page_text = page.extract_text()
-        #         content += page_text
-
-        #     with open(f's3://search-engine-bd/corpus/txt/{paper}.txt'.format(paper), 'w') as txt_file:
-        #         txt_file.write(content)
-
 
 if __name__ == "__main__":
     root = Paper("649def34f8be52c8b66281af98ae884c09aef38b")

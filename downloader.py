@@ -50,16 +50,9 @@ def download_pdf(session: Session, url: str, path: str, user_agent: str = 'reque
 
         pdf_data.close()
 
-        # with open(path, 'wb') as f:
-            # write the response to the file, chunk_size bytes at a time
-            # for chunk in response.iter_content(chunk_size=8192):
-            #     f.write(chunk)
-
-
 def download_paper(session: Session, paper_id: str, directory: str = 'papers', user_agent: str = 'requests/2.0.0') -> Union[str, None]:
     paper = get_paper(session, paper_id, fields='paperId,isOpenAccess,openAccessPdf')
 
-    # check if the paper is open access
     if not paper['isOpenAccess']:
         return None
 
@@ -70,12 +63,8 @@ def download_paper(session: Session, paper_id: str, directory: str = 'papers', u
     pdf_url: str = paper['openAccessPdf']['url']
     pdf_path = os.path.join(directory, f'{paperId}.pdf')
 
-    # create the directory if it doesn't exist
     os.makedirs(directory, exist_ok=True)
 
-    # check if the pdf has already been downloaded
-
-    # if not os.path.exists(pdf_path):
     download_pdf(session, pdf_url, pdf_path, user_agent=user_agent)
 
     return pdf_path
@@ -91,30 +80,11 @@ def download_papers_util(paper_ids: List[str], directory: str = 'papers', user_a
                 yield paper_id, e
 
 
-# def main(args: argparse.Namespace) -> None:
-#     for paper_id, result in download_papers(args.paper_ids, directory=args.directory, user_agent=args.user_agent):
-#         if isinstance(result, Exception):
-#             print(f"Failed to download '{paper_id}': {type(result).__name__}: {result}")
-#         elif result is None:
-#             print(f"'{paper_id}' is not open access")
-#         else:
-#             print(f"Downloaded '{paper_id}' to '{result}'")
-
 def download_papers_pdf(paper_ids):
     for paper_id, result in download_papers_util(paper_ids, directory="corpus/pdf", user_agent="requests/2.0.0"):
         if isinstance(result, Exception):
             print(f"Failed to download '{paper_id}': {type(result).__name__}: {result}")
         elif result is None:
             print(f"'{paper_id}' is not open access")
-        else:
-            print(f"Downloaded '{paper_id}' to '{result}'")
-
-
-
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--directory', '-d', default='papers')
-#     parser.add_argument('--user-agent', '-u', default='requests/2.0.0')
-#     parser.add_argument('paper_ids', nargs='+', default=[])
-#     args = parser.parse_args()
-#     main(args)
+        # else:
+            # print(f"Downloaded '{paper_id}' to '{result}'")

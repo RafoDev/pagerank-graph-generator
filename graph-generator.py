@@ -13,8 +13,6 @@ corpus_object = s3_client.get_object(
 corpus_data = corpus_object['Body'].read().decode('utf-8')
 corpus = json.loads(corpus_data)
 
-# with open(corpus_filename, "r") as corpus_json:
-#     corpus = json.load(corpus_json)
 
 lines = ""
 
@@ -40,8 +38,3 @@ lines_buffer = BytesIO(lines_bytes)
 s3_client.upload_fileobj(lines_buffer, 'search-engine-bd', pagerank_filename)
 
 lines_buffer.close()
-
-# with open('s3://search-engine-bd/data/pagerank.txt', 'w') as f:
-#     f.writelines(lines)
-
-# f.close()
