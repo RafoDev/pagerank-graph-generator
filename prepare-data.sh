@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # compatibility with aws 2
-pip install "urllib3<2.0"
+#pip install "urllib3<2.0"
 
 # dirs creation for corpus and related data
 python clean.py
